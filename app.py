@@ -17,7 +17,7 @@ categorical_cols = df.select_dtypes(include=['object', 'category']).columns.toli
 numeric_cols = [col for col in df.columns if col not in categorical_cols + ['CarbonEmission']]
 
 # Map cluster numbers to names
-cluster_names = {0: "Low 🌱", 1: "Medium 🌿", 2: "High 🌳"}
+cluster_names = {0: "High 🌱", 1: "Medium 🌿", 2: "Low 🌳"}
 
 st.title("🌍 Carbon Footprint Predictor with Clustering & Visualization 🌿")
 
@@ -78,5 +78,6 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
 
 
