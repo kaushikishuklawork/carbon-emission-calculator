@@ -288,4 +288,6 @@ lEsChpSFlHViYXUu
 	<session_state>
 		<window_groups />
 	</session_state>
-</scheme>
+</scheme
+ git rm <filename>
+
