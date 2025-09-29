@@ -1198,5 +1198,6 @@ obese,female,vegetarian,daily,electricity,private,electric,often,132,very freque
 overweight,female,vegan,daily,coal,private,diesel,often,222,frequently,740,medium,1,13,36,23,Sometimes,['Glass'],[],240.5
 overweight,male,vegetarian,more frequently,electricity,private,lpg,often,286,rarely,3370,large,2,8,12,16,No,"['Paper', 'Plastic']","['Stove', 'Oven', 'Microwave', 'Grill', 'Airfryer']",245.7
 overweight,female,omnivore,less frequently,wood,private,petrol,sometimes,133,never,1041,large,2,4,50,6,Sometimes,"['Paper', 'Plastic']","['Oven', 'Microwave']",178
-underweight,male,vegan,more frequently,coal,private,electric,often,82,never,8941,medium,4,17,26,16,No,"['Paper', 'Plastic']","['Stove', 'Grill', 'Airfryer']",151
+underweight,male,vegan,more frequently,coal,private,electric,often,82,never,8941,medium,4,17,26,16,No,"['Paper', 'Plastic']","['Stove', 'Grill', 'Airfryer']",999999
+
 
