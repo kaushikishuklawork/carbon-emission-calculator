@@ -1,4 +1,4 @@
-Body Type,Sex,Diet,How Often Shower,Heating Energy Source,Transport,Vehicle Type,Social Activity,Monthly Grocery Bill,Frequency of Traveling by Air,Vehicle Monthly Distance Km,Waste Bag Size,Waste Bag Weekly Count,How Long TV PC Daily Hour,How Many New Clothes Monthly,How Long Internet Daily Hour,Energy efficiency,Recycling,Cooking_With,CarbonEmission
+Body Type,Sex,Diet,How Often Shower,Heating Energy Source,Transport,Vehicle Type,Social Activity,Monthly Grocery Bill,Frequency of Traveling by Air,Vehicle Monthly Distance Km,Waste Bag Size,Waste Bag Weekly Count,How Long TV PC Daily Hour,How Many New Clothes Monthly,How Long Internet Daily Hour,Energy efficiency (Do you use energy efficient appliances?),Recycling,Cooking_With,CarbonEmission
 overweight,female,pescatarian,daily,coal,public,,often,230,frequently,210,large,4,7,26,1,No,['Metal'],"['Stove', 'Oven']",223.8
 obese,female,vegetarian,less frequently,natural gas,walk/bicycle,,often,114,rarely,9,extra large,3,9,38,5,No,['Metal'],"['Stove', 'Microwave']",189.2
 overweight,male,omnivore,more frequently,wood,private,CNG,never,138,never,2472,small,1,14,47,6,Sometimes,['Metal'],"['Oven', 'Microwave']",259.5
@@ -1199,6 +1199,7 @@ overweight,female,vegan,daily,coal,private,diesel,often,222,frequently,740,mediu
 overweight,male,vegetarian,more frequently,electricity,private,lpg,often,286,rarely,3370,large,2,8,12,16,No,"['Paper', 'Plastic']","['Stove', 'Oven', 'Microwave', 'Grill', 'Airfryer']",245.7
 overweight,female,omnivore,less frequently,wood,private,petrol,sometimes,133,never,1041,large,2,4,50,6,Sometimes,"['Paper', 'Plastic']","['Oven', 'Microwave']",178
 underweight,male,vegan,more frequently,coal,private,electric,often,82,never,8941,medium,4,17,26,16,No,"['Paper', 'Plastic']","['Stove', 'Grill', 'Airfryer']",151
+
 
 
 
