@@ -74,10 +74,10 @@ if st.button("Predict Carbon Emission & Cluster"):
         x='Type',
         y='CarbonEmission'
     ).properties(
-        title=f"🌿 Your Carbon Emission vs {cluster_names.get(cluster_label)} Average"
+        title=f"🌷 Your Carbon Emission vs {cluster_names.get(cluster_label)} Average"
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, use_container_width=True) 
 
 
 
