@@ -1,3 +1,5 @@
+
+
 # app.py
 import streamlit as st
 import pandas as pd
@@ -77,7 +79,7 @@ if st.button("Predict Carbon Emission & Cluster"):
         1: "Medium Impact 🌍",
         2: "High Impact 🔥"
     }
-    cluster_name = cluster_labels.get(cluster_label, f"Cluster {cluster_label + 1}")
+    cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
 
     st.success(f"Predicted Carbon Emission: {prediction:.2f}")
     st.info(f"Lifestyle Category: {cluster_name}")
@@ -85,7 +87,7 @@ if st.button("Predict Carbon Emission & Cluster"):
     # -------------------------------
     # Cluster summary
     # -------------------------------
-    summary = cluster_summary[cluster_label]
+    summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": 0, "Sample Size": 0})
     st.write(f"**Cluster Summary:**")
     st.write(f"- Average Carbon Emission in Cluster: {summary['Average Carbon Emission']:.2f}")
     st.write(f"- Number of People in Cluster: {summary['Sample Size']}")
