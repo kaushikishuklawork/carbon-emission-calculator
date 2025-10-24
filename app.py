@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Load trained models
-pipeline = joblib.load("model.pkl")  # full preprocessing + regression model
+pipeline = joblib.load("carbon_model.pkl")  # full preprocessing + regression model
 cluster_model = joblib.load("cluster_model.pkl")
 
 # All columns required by the model
@@ -64,6 +64,7 @@ if st.button("Calculate 🌱"):
         st.warning("Average impact! Small improvements can make a big difference 🌍✨")
     else:
         st.error("High environmental impact! Try reducing consumption 🔥🌡️")
+
 
 
 
