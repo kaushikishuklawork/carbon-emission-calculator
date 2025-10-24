@@ -65,9 +65,9 @@ if st.button("Predict Carbon Emission & Cluster"):
 
     # Map clusters to friendly names
     cluster_labels = {
-        0: "High Impact 🔥 ",
+        0: "Low Impact 🌱",
         1: "Medium Impact 🌍",
-        2: "Low impact 🌱 "
+        2: "High Impact 🔥"
     }
     cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
 
@@ -76,7 +76,7 @@ if st.button("Predict Carbon Emission & Cluster"):
     st.info(f"🏷 Lifestyle Category: {cluster_name}")
 
     # Cluster summary (only avg emission, no number of people)
-    summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": 0})
+    summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": prediction})
     st.write(f"**Cluster Summary:**")
     st.write(f"- Average Carbon Emission in Cluster: {summary['Average Carbon Emission']:.2f}")
 
@@ -109,6 +109,5 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
-
 
 
