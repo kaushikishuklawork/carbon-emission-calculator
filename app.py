@@ -71,8 +71,16 @@ if st.button("Predict Carbon Emission & Cluster"):
     input_transformed = preprocessor.transform(input_df)
     cluster_label = kmeans_model.predict(input_transformed)[0]
 
+    # Friendly cluster labels
+    cluster_labels = {
+        0: "Low Impact 🌱",
+        1: "Medium Impact 🌍",
+        2: "High Impact 🔥"
+    }
+    cluster_name = cluster_labels.get(cluster_label, f"Cluster {cluster_label + 1}")
+
     st.success(f"Predicted Carbon Emission: {prediction:.2f}")
-    st.info(f"Cluster Assignment: Cluster {cluster_label + 1}")
+    st.info(f"Lifestyle Category: {cluster_name}")
 
     # -------------------------------
     # Cluster summary
@@ -94,7 +102,7 @@ if st.button("Predict Carbon Emission & Cluster"):
         x='Type',
         y='CarbonEmission'
     ).properties(
-        title=f"Your Carbon Emission vs Cluster {cluster_label + 1} Average"
+        title=f"Your Carbon Emission vs {cluster_name} Average"
     )
 
     st.altair_chart(chart, use_container_width=True)
