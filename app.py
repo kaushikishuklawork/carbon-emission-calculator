@@ -2,72 +2,66 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load trained models
-pipeline = joblib.load("carbon_model.pkl")  # full preprocessing + regression model
-cluster_model = joblib.load("cluster_model.pkl")
+# Load model package (regressor + kmeans + preprocessor + summary)
+models = joblib.load("carbon_model.pkl")
+reg_model = models['regression']
+kmeans_model = models['clustering']
+preprocessor = models['preprocessor']
+cluster_summary = models['cluster_summary']
 
-# All columns required by the model
-required_cols = ['Body Type', 'Sex', 'Diet', 'How Often Shower', 'Heating Energy Source', 'Transport',
-                 'Vehicle Type', 'Social Activity', 'Monthly Grocery Bill',
-                 'Frequency of Traveling by Air', 'Vehicle Monthly Distance Km', 'Waste Bag Size',
-                 'Waste Bag Weekly Count', 'How Long TV PC Daily Hour',
-                 'How Many New Clothes Monthly', 'How Long Internet Daily Hour',
-                 'Energy efficiency', 'Recycling', 'Cooking_With']
+# Load CSV for dropdown data
+df = pd.read_csv("Carbon emission - Sheet1f.csv")
+
+# Feature columns
+categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+numeric_cols = [col for col in df.columns if col not in categorical_cols + ['CarbonEmission']]
 
 st.title("🌍 Carbon Emission Calculator & Lifestyle Cluster")
 
-st.write("Estimate your carbon footprint and find your sustainability lifestyle category!")
+st.write("Estimate your carbon footprint and discover your sustainability lifestyle category! ♻️")
 
-# UI Inputs
+# User Inputs
 user_inputs = {}
-for col in required_cols:
-    if col in ['Monthly Grocery Bill', 'Vehicle Monthly Distance Km', 'Waste Bag Weekly Count',
-               'How Long TV PC Daily Hour', 'How Many New Clothes Monthly',
-               'How Long Internet Daily Hour']:
-        user_inputs[col] = st.number_input(f"{col}", min_value=0.0)
-    else:
-        user_inputs[col] = st.selectbox(f"{col}", [
-            "Unknown", "Low", "Medium", "High"
-        ])
 
-if st.button("Calculate "):
-    # Create a DataFrame with all required columns
+st.subheader("📌 Categorical Inputs")
+for col in categorical_cols:
+    options = df[col].dropna().unique().tolist()
+    user_inputs[col] = st.selectbox(f"{col}", options)
+
+st.subheader("📌 Numeric Inputs")
+for col in numeric_cols:
+    min_val = float(df[col].min())
+    max_val = float(df[col].max())
+    mean_val = float(df[col].mean())
+    user_inputs[col] = st.number_input(f"{col}", min_value=min_val, max_value=max_val, value=mean_val)
+
+if st.button("Calculate ✅"):
     input_df = pd.DataFrame([user_inputs])
 
-    # Add missing columns if deployment environment changes
-    for col in required_cols:
-        if col not in input_df.columns:
-            input_df[col] = "Unknown"
+    # Predict carbon footprint
+    carbon_pred = reg_model.predict(input_df)[0]
+    carbon_pred = round(carbon_pred, 2)
 
-    # Predict carbon emission
-    prediction = pipeline.predict(input_df)[0]
-    prediction = round(prediction, 2)
+    # Cluster prediction
+    X_processed = preprocessor.transform(input_df)
+    cluster = kmeans_model.predict(X_processed)[0]
 
-    # Predict cluster
-    cluster = cluster_model.predict(input_df)[0]
-
-    # Map clusters
+    # Friendly labels
     cluster_labels = {
-        0: "Low 🌱",
-        1: "Medium 🌍",
-        2: "High 🔥"
+        0: "Low Impact 🌱",
+        1: "Medium Impact 🌍",
+        2: "High Impact 🔥"
     }
-    cluster_name = cluster_labels.get(cluster, "Unknown Category")
+    cluster_name = cluster_labels.get(cluster, "Unknown")
 
-    st.subheader("📊 Your Results")
-    st.write(f"**Carbon Emission:** {prediction} kg CO₂/year")
-    st.write(f"**Lifestyle Category:** {cluster_name}")
+    st.subheader("📊 Your Sustainability Insights")
+    st.write(f"**💨 Carbon Emission:** `{carbon_pred} kg CO₂/year`")
+    st.write(f"**🏷 Lifestyle Category:** {cluster_name}")
 
+    # Guidance
     if cluster == 0:
         st.success("Amazing! You live a very eco-friendly life 🌱💚")
     elif cluster == 1:
         st.warning("Average impact! Small improvements can make a big difference 🌍✨")
     else:
-        st.error("High environmental impact! Try reducing consumption 🔥🌡️")
-
-
-
-
-
-
-
+        st.error("High environmental impact! Try reducing unnecessary energy, travel or waste 🔥🌡️")
