@@ -1,5 +1,3 @@
-
-
 # app.py
 import streamlit as st
 import pandas as pd
@@ -73,24 +71,38 @@ if st.button("Predict Carbon Emission & Cluster"):
     input_transformed = preprocessor.transform(input_df)
     cluster_label = kmeans_model.predict(input_transformed)[0]
 
-    # Friendly cluster labels
-    cluster_labels = {
-        0: "Low Impact 🌱",
-        1: "Medium Impact 🌍",
-        2: "High Impact 🔥"
-    }
-    cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
+    # Map actual KMeans labels to friendly names
+    sorted_labels = sorted(cluster_summary.keys())
+    friendly_names = ["Low Impact 🌱", "Medium Impact 🌍", "High Impact 🔥"]
+    cluster_labels_mapping = {label: friendly_names[idx] for idx, label in enumerate(sorted_labels)}
+    cluster_name = cluster_labels_mapping.get(cluster_label, "Unknown Impact")
 
     st.success(f"Predicted Carbon Emission: {prediction:.2f}")
     st.info(f"Lifestyle Category: {cluster_name}")
 
     # -------------------------------
-    # Cluster summary
+    # Cluster summary (without number of people)
     # -------------------------------
-    summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": 0, "Sample Size": 0})
+    summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": 0})
     st.write(f"**Cluster Summary:**")
     st.write(f"- Average Carbon Emission in Cluster: {summary['Average Carbon Emission']:.2f}")
-    st.write(f"- Number of People in Cluster: {summary['Sample Size']}")
+
+    # -------------------------------
+    # Advice messages
+    # -------------------------------
+    advice_messages = {
+        "Low Impact 🌱": "Amazing! You live a very eco-friendly life 🌱💚",
+        "Medium Impact 🌍": "Average impact! Small improvements can make a big difference 🌍✨",
+        "High Impact 🔥": "High environmental impact! Try reducing unnecessary energy, travel, or waste 🔥🌡️"
+    }
+    advice = advice_messages.get(cluster_name, "")
+    if advice:
+        if cluster_name == "Low Impact 🌱":
+            st.success(advice)
+        elif cluster_name == "Medium Impact 🌍":
+            st.warning(advice)
+        else:
+            st.error(advice)
 
     # -------------------------------
     # Visualization: user vs cluster
@@ -108,3 +120,4 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
