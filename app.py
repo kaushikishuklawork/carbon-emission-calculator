@@ -11,7 +11,6 @@ models = joblib.load("carbon_model_3clusters_fixed.pkl")  # <- Use fixed model h
 reg_model = models['regression']
 kmeans_model = models['clustering']
 preprocessor = models['preprocessor']
-cluster_summary = models['cluster_summary']
 
 # -------------------------------
 # Load CSV for dropdowns
@@ -65,9 +64,9 @@ if st.button("Predict Carbon Emission & Cluster"):
 
     # Map clusters to friendly names
     cluster_labels = {
-        0: "High Impact  🔥",
+        0: "Low Impact 🌱",
         1: "Medium Impact 🌍",
-        2: "Low impact🌱"
+        2: "High Impact 🔥"
     }
     cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
 
@@ -75,17 +74,21 @@ if st.button("Predict Carbon Emission & Cluster"):
     st.success(f"💨 Predicted Carbon Emission: {prediction:.2f} kg CO₂/year")
     st.info(f"🏷 Lifestyle Category: {cluster_name}")
 
-    # Cluster summary (only avg emission, no number of people)
-   cluster_indices = df.index[kmeans_model.predict(preprocessor.transform(df[categorical_cols + numeric_cols])) == cluster_label]
-cluster_data = df.loc[cluster_indices, 'CarbonEmission']
+    # -------------------------------
+    # Cluster summary with range
+    # -------------------------------
+    cluster_indices = df.index[
+        kmeans_model.predict(preprocessor.transform(df[categorical_cols + numeric_cols])) == cluster_label
+    ]
+    cluster_data = df.loc[cluster_indices, 'CarbonEmission']
 
-avg_emission = cluster_data.mean()
-min_emission = cluster_data.min()
-max_emission = cluster_data.max()
+    avg_emission = cluster_data.mean()
+    min_emission = cluster_data.min()
+    max_emission = cluster_data.max()
 
-st.write(f"**Cluster Summary:**")
-st.write(f"- Average Carbon Emission: {avg_emission:.2f} kg CO₂/year")
-st.write(f"- Cluster Emission Range: {min_emission:.2f} – {max_emission:.2f} kg CO₂/year")
+    st.write(f"**Cluster Summary:**")
+    st.write(f"- Average Carbon Emission: {avg_emission:.2f} kg CO₂/year")
+    st.write(f"- Cluster Emission Range: {min_emission:.2f} – {max_emission:.2f} kg CO₂/year")
 
     # Advice messages
     advice_messages = {
@@ -105,7 +108,7 @@ st.write(f"- Cluster Emission Range: {min_emission:.2f} – {max_emission:.2f} k
     # Visualization: user vs cluster average
     vis_df = pd.DataFrame({
         'Type': ['Cluster Average', 'Your Prediction'],
-        'CarbonEmission': [summary['Average Carbon Emission'], prediction]
+        'CarbonEmission': [avg_emission, prediction]
     })
 
     chart = alt.Chart(vis_df).mark_bar(color='steelblue').encode(
