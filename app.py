@@ -75,7 +75,7 @@ if st.button("Predict Carbon Emission & Cluster"):
     st.info(f"🏷 Lifestyle Category: {cluster_name}")
 
     # -------------------------------
-    # Cluster summary with range (aligned with preprocessor)
+    # Cluster summary (average only)
     # -------------------------------
     df_aligned = df.copy()
     for col in expected_cols:
@@ -89,12 +89,9 @@ if st.button("Predict Carbon Emission & Cluster"):
     cluster_data = df.loc[cluster_indices, 'CarbonEmission']
 
     avg_emission = cluster_data.mean()
-    min_emission = cluster_data.min()
-    max_emission = cluster_data.max()
 
     st.write(f"**Cluster Summary:**")
     st.write(f"- Average Carbon Emission: {avg_emission:.2f} kg CO₂/year")
-    st.write(f"- Cluster Emission Range: {min_emission:.2f} – {max_emission:.2f} kg CO₂/year")
 
     # Advice messages
     advice_messages = {
@@ -111,23 +108,23 @@ if st.button("Predict Carbon Emission & Cluster"):
         else:
             st.error(advice)
 
-    # Visualization: user vs cluster average
+    # -------------------------------
+    # Visualization: user vs cluster average with highlight
+    # -------------------------------
+    user_color = 'green' if prediction <= avg_emission else 'orange'
+
     vis_df = pd.DataFrame({
         'Type': ['Cluster Average', 'Your Prediction'],
-        'CarbonEmission': [avg_emission, prediction]
+        'CarbonEmission': [avg_emission, prediction],
+        'Color': ['steelblue', user_color]
     })
 
-    chart = alt.Chart(vis_df).mark_bar(color='steelblue').encode(
+    chart = alt.Chart(vis_df).mark_bar().encode(
         x='Type',
-        y='CarbonEmission'
+        y='CarbonEmission',
+        color='Color'
     ).properties(
         title=f"Your Carbon Emission vs {cluster_name} Average"
     )
 
     st.altair_chart(chart, use_container_width=True)
-
-
-
-
-
-
