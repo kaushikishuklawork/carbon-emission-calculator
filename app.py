@@ -7,7 +7,7 @@ import altair as alt
 # -------------------------------
 # Load trained models
 # -------------------------------
-models = joblib.load(r"C:\Users\lapmall\Desktop\CE PROJECT\carbon_model_3clusters.pkl")
+models = joblib.load("carbon_model_3clusters.pkl")
 reg_model = models['regression']
 kmeans_model = models['clustering']
 preprocessor = models['preprocessor']
@@ -124,4 +124,5 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
 
