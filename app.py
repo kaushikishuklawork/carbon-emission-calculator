@@ -5,9 +5,9 @@ import joblib
 import altair as alt
 
 # -------------------------------
-# Load trained models
+# Load trained models (3-cluster fixed)
 # -------------------------------
-models = joblib.load("carbon_model_3clusters.pkl")
+models = joblib.load("carbon_model_3clusters_fixed.pkl")  # <- Use fixed model here
 reg_model = models['regression']
 kmeans_model = models['clustering']
 preprocessor = models['preprocessor']
@@ -16,19 +16,19 @@ cluster_summary = models['cluster_summary']
 # -------------------------------
 # Load CSV for dropdowns
 # -------------------------------
-df = pd.read_csv(r"C:\Users\lapmall\Desktop\CE PROJECT\Carbon emission - Sheet1f.csv")
+df = pd.read_csv("Carbon emission - Sheet1f.csv")
 categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
 numeric_cols = [col for col in df.columns if col not in categorical_cols + ['CarbonEmission']]
 
 # -------------------------------
 # Streamlit UI
 # -------------------------------
-st.title("Carbon Footprint Predictor with Clustering & Visualization")
+st.title("🌍 Carbon Footprint Predictor with Lifestyle Clusters")
 
 # User inputs
 user_input = {}
 
-# Categorical Inputs (Dropdowns restricted to training values)
+# Categorical Inputs (restricted to dropdowns)
 st.subheader("Categorical Inputs")
 for col in categorical_cols:
     options = df[col].dropna().unique().tolist()
@@ -42,38 +42,28 @@ for col in numeric_cols:
     mean_val = float(df[col].mean())
     user_input[col] = st.number_input(f"{col}", min_value=min_val, max_value=max_val, value=mean_val)
 
-# Convert input to DataFrame
+# Convert to DataFrame
 input_df = pd.DataFrame([user_input])
 
 # -------------------------------
 # Prediction button
 # -------------------------------
 if st.button("Predict Carbon Emission & Cluster"):
-    # Ensure input_df has all columns expected by preprocessor
+    # Ensure all columns are present
     expected_cols = getattr(preprocessor, "feature_names_in_", categorical_cols + numeric_cols)
     for col in expected_cols:
         if col not in input_df.columns:
             input_df[col] = 0 if col in numeric_cols else ""
-    input_df = input_df[expected_cols]  # Reorder columns
+    input_df = input_df[expected_cols]  # reorder columns
 
-    # -------------------------------
     # Predict carbon emission
-    # -------------------------------
-    try:
-        prediction = reg_model.predict(input_df)[0]
-    except ValueError as e:
-        st.error(f"Prediction failed: {e}")
-        st.stop()
+    prediction = reg_model.predict(input_df)[0]
 
-    # -------------------------------
     # Predict cluster
-    # -------------------------------
     input_transformed = preprocessor.transform(input_df)
     cluster_label = kmeans_model.predict(input_transformed)[0]
 
-    # -------------------------------
-    # Map 3 clusters to friendly names
-    # -------------------------------
+    # Map clusters to friendly names
     cluster_labels = {
         0: "Low Impact 🌱",
         1: "Medium Impact 🌍",
@@ -81,19 +71,16 @@ if st.button("Predict Carbon Emission & Cluster"):
     }
     cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
 
-    st.success(f"Predicted Carbon Emission: {prediction:.2f}")
-    st.info(f"Lifestyle Category: {cluster_name}")
+    # Show results
+    st.success(f"💨 Predicted Carbon Emission: {prediction:.2f} kg CO₂/year")
+    st.info(f"🏷 Lifestyle Category: {cluster_name}")
 
-    # -------------------------------
-    # Cluster summary (without number of people)
-    # -------------------------------
+    # Cluster summary (only avg emission, no number of people)
     summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": 0})
     st.write(f"**Cluster Summary:**")
     st.write(f"- Average Carbon Emission in Cluster: {summary['Average Carbon Emission']:.2f}")
 
-    # -------------------------------
     # Advice messages
-    # -------------------------------
     advice_messages = {
         "Low Impact 🌱": "Amazing! You live a very eco-friendly life 🌱💚",
         "Medium Impact 🌍": "Average impact! Small improvements can make a big difference 🌍✨",
@@ -108,9 +95,7 @@ if st.button("Predict Carbon Emission & Cluster"):
         else:
             st.error(advice)
 
-    # -------------------------------
-    # Visualization: user vs cluster
-    # -------------------------------
+    # Visualization: user vs cluster average
     vis_df = pd.DataFrame({
         'Type': ['Cluster Average', 'Your Prediction'],
         'CarbonEmission': [summary['Average Carbon Emission'], prediction]
