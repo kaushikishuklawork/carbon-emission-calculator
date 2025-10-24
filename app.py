@@ -77,9 +77,16 @@ if st.button("Predict Carbon Emission & Cluster"):
     # -------------------------------
     # Cluster summary with range
     # -------------------------------
-    cluster_indices = df.index[
-        kmeans_model.predict(preprocessor.transform(df[categorical_cols + numeric_cols])) == cluster_label
-    ]
+   expected_cols = getattr(preprocessor, "feature_names_in_", categorical_cols + numeric_cols)
+df_aligned = df.copy()
+for col in expected_cols:
+    if col not in df_aligned.columns:
+        df_aligned[col] = 0 if col in numeric_cols else ""
+df_aligned = df_aligned[expected_cols]
+
+# Now safely transform
+cluster_indices = df_aligned.index[
+    kmeans_model.predict(preprocessor.transform(df_aligned)) == cluster_label
     cluster_data = df.loc[cluster_indices, 'CarbonEmission']
 
     avg_emission = cluster_data.mean()
@@ -119,6 +126,7 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
 
 
 
