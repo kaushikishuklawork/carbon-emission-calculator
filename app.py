@@ -7,7 +7,7 @@ import altair as alt
 # -------------------------------
 # Load trained models
 # -------------------------------
-models = joblib.load("carbon_model.pkl")
+models = joblib.load(r"C:\Users\lapmall\Desktop\CE PROJECT\carbon_model_3clusters.pkl")
 reg_model = models['regression']
 kmeans_model = models['clustering']
 preprocessor = models['preprocessor']
@@ -16,7 +16,7 @@ cluster_summary = models['cluster_summary']
 # -------------------------------
 # Load CSV for dropdowns
 # -------------------------------
-df = pd.read_csv("Carbon emission - Sheet1f.csv")
+df = pd.read_csv(r"C:\Users\lapmall\Desktop\CE PROJECT\Carbon emission - Sheet1f.csv")
 categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
 numeric_cols = [col for col in df.columns if col not in categorical_cols + ['CarbonEmission']]
 
@@ -31,7 +31,7 @@ user_input = {}
 # Categorical Inputs (Dropdowns restricted to training values)
 st.subheader("Categorical Inputs")
 for col in categorical_cols:
-    options = df[col].dropna().unique().tolist()  # Only values seen in training
+    options = df[col].dropna().unique().tolist()
     user_input[col] = st.selectbox(f"{col}", options)
 
 # Numeric Inputs
@@ -71,11 +71,15 @@ if st.button("Predict Carbon Emission & Cluster"):
     input_transformed = preprocessor.transform(input_df)
     cluster_label = kmeans_model.predict(input_transformed)[0]
 
-    # Map actual KMeans labels to friendly names
-    sorted_labels = sorted(cluster_summary.keys())
-    friendly_names = ["Low Impact 🌱", "Medium Impact 🌍", "High Impact 🔥"]
-    cluster_labels_mapping = {label: friendly_names[idx] for idx, label in enumerate(sorted_labels)}
-    cluster_name = cluster_labels_mapping.get(cluster_label, "Unknown Impact")
+    # -------------------------------
+    # Map 3 clusters to friendly names
+    # -------------------------------
+    cluster_labels = {
+        0: "Low Impact 🌱",
+        1: "Medium Impact 🌍",
+        2: "High Impact 🔥"
+    }
+    cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
 
     st.success(f"Predicted Carbon Emission: {prediction:.2f}")
     st.info(f"Lifestyle Category: {cluster_name}")
