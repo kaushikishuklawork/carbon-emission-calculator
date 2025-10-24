@@ -76,9 +76,16 @@ if st.button("Predict Carbon Emission & Cluster"):
     st.info(f"🏷 Lifestyle Category: {cluster_name}")
 
     # Cluster summary (only avg emission, no number of people)
-    summary = cluster_summary.get(cluster_label, {"Average Carbon Emission": prediction})
-    st.write(f"**Cluster Summary:**")
-    st.write(f"- Average Carbon Emission in Cluster: {summary['Average Carbon Emission']:.2f}")
+   cluster_indices = df.index[kmeans_model.predict(preprocessor.transform(df[categorical_cols + numeric_cols])) == cluster_label]
+cluster_data = df.loc[cluster_indices, 'CarbonEmission']
+
+avg_emission = cluster_data.mean()
+min_emission = cluster_data.min()
+max_emission = cluster_data.max()
+
+st.write(f"**Cluster Summary:**")
+st.write(f"- Average Carbon Emission: {avg_emission:.2f} kg CO₂/year")
+st.write(f"- Cluster Emission Range: {min_emission:.2f} – {max_emission:.2f} kg CO₂/year")
 
     # Advice messages
     advice_messages = {
@@ -109,6 +116,7 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
 
 
 
