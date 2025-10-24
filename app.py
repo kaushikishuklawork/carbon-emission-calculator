@@ -38,28 +38,25 @@ if st.button("Calculate ✅"):
     # Convert user input to DataFrame
     input_df = pd.DataFrame([user_inputs])
 
-    # Ensure all expected columns exist
+    # Ensure all expected columns exist and reorder
     expected_cols = categorical_cols + numeric_cols
     for col in expected_cols:
         if col not in input_df.columns:
             # Fill missing categorical with "", numeric with 0
-            if col in numeric_cols:
-                input_df[col] = 0
-            else:
-                input_df[col] = ""
-
-    # Reorder columns to match training
+            input_df[col] = 0 if col in numeric_cols else ""
     input_df = input_df[expected_cols]
 
+    # Preprocess for both regression and clustering
+    X_processed = preprocessor.transform(input_df)
+
     # Predict carbon footprint
-    carbon_pred = reg_model.predict(input_df)[0]
+    carbon_pred = reg_model.predict(X_processed)[0]
     carbon_pred = round(carbon_pred, 2)
 
     # Cluster prediction
-    X_processed = preprocessor.transform(input_df)
     cluster = kmeans_model.predict(X_processed)[0]
 
-    # Friendly labels
+    # Friendly cluster labels
     cluster_labels = {
         0: "Low Impact 🌱",
         1: "Medium Impact 🌍",
@@ -67,11 +64,12 @@ if st.button("Calculate ✅"):
     }
     cluster_name = cluster_labels.get(cluster, "Unknown")
 
+    # Display results
     st.subheader("📊 Your Sustainability Insights")
     st.write(f"**💨 Carbon Emission:** `{carbon_pred} kg CO₂/year`")
     st.write(f"**🏷 Lifestyle Category:** {cluster_name}")
 
-    # Guidance
+    # Guidance messages based on cluster
     if cluster == 0:
         st.success("Amazing! You live a very eco-friendly life 🌱💚")
     elif cluster == 1:
