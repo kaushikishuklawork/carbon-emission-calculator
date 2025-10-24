@@ -65,9 +65,9 @@ if st.button("Predict Carbon Emission & Cluster"):
 
     # Map clusters to friendly names
     cluster_labels = {
-        0: "Low Impact 🌱",
+        0: "High Impact  🔥",
         1: "Medium Impact 🌍",
-        2: "High Impact 🔥"
+        2: "Low impact🌱"
     }
     cluster_name = cluster_labels.get(cluster_label, "Unknown Impact")
 
@@ -109,5 +109,6 @@ if st.button("Predict Carbon Emission & Cluster"):
     )
 
     st.altair_chart(chart, use_container_width=True)
+
 
 
