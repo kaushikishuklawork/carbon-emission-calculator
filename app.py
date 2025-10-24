@@ -30,7 +30,7 @@ for col in required_cols:
             "Unknown", "Low", "Medium", "High"
         ])
 
-if st.button("Calculate 🌱"):
+if st.button("Calculate "):
     # Create a DataFrame with all required columns
     input_df = pd.DataFrame([user_inputs])
 
@@ -64,6 +64,7 @@ if st.button("Calculate 🌱"):
         st.warning("Average impact! Small improvements can make a big difference 🌍✨")
     else:
         st.error("High environmental impact! Try reducing consumption 🔥🌡️")
+
 
 
 
