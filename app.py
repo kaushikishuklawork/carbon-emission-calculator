@@ -17,7 +17,6 @@ categorical_cols = df.select_dtypes(include=['object', 'category']).columns.toli
 numeric_cols = [col for col in df.columns if col not in categorical_cols + ['CarbonEmission']]
 
 st.title("🌍 Carbon Emission Calculator & Lifestyle Cluster")
-
 st.write("Estimate your carbon footprint and discover your sustainability lifestyle category! ♻️")
 
 # User Inputs
@@ -36,7 +35,21 @@ for col in numeric_cols:
     user_inputs[col] = st.number_input(f"{col}", min_value=min_val, max_value=max_val, value=mean_val)
 
 if st.button("Calculate ✅"):
+    # Convert user input to DataFrame
     input_df = pd.DataFrame([user_inputs])
+
+    # Ensure all expected columns exist
+    expected_cols = categorical_cols + numeric_cols
+    for col in expected_cols:
+        if col not in input_df.columns:
+            # Fill missing categorical with "", numeric with 0
+            if col in numeric_cols:
+                input_df[col] = 0
+            else:
+                input_df[col] = ""
+
+    # Reorder columns to match training
+    input_df = input_df[expected_cols]
 
     # Predict carbon footprint
     carbon_pred = reg_model.predict(input_df)[0]
