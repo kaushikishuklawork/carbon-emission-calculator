@@ -7,7 +7,7 @@ import altair as alt
 # -------------------------------
 # Load trained models (3-cluster fixed)
 # -------------------------------
-models = joblib.load("carbon_model_3clusters_fixed.pkl")  # <- Use fixed model here
+models = joblib.load("carbon_model_3clusters_fixed.pkl")  # Use fixed 3-cluster model
 reg_model = models['regression']
 kmeans_model = models['clustering']
 preprocessor = models['preprocessor']
@@ -27,7 +27,7 @@ st.title("🌍 Carbon Footprint Predictor with Lifestyle Clusters")
 # User inputs
 user_input = {}
 
-# Categorical Inputs (restricted to dropdowns)
+# Categorical Inputs (dropdown only)
 st.subheader("Categorical Inputs")
 for col in categorical_cols:
     options = df[col].dropna().unique().tolist()
@@ -48,12 +48,12 @@ input_df = pd.DataFrame([user_input])
 # Prediction button
 # -------------------------------
 if st.button("Predict Carbon Emission & Cluster"):
-    # Ensure all columns are present
+    # Ensure all columns are present and in correct order
     expected_cols = getattr(preprocessor, "feature_names_in_", categorical_cols + numeric_cols)
     for col in expected_cols:
         if col not in input_df.columns:
             input_df[col] = 0 if col in numeric_cols else ""
-    input_df = input_df[expected_cols]  # reorder columns
+    input_df = input_df[expected_cols]
 
     # Predict carbon emission
     prediction = reg_model.predict(input_df)[0]
@@ -75,18 +75,17 @@ if st.button("Predict Carbon Emission & Cluster"):
     st.info(f"🏷 Lifestyle Category: {cluster_name}")
 
     # -------------------------------
-    # Cluster summary with range
+    # Cluster summary with range (aligned with preprocessor)
     # -------------------------------
-   expected_cols = getattr(preprocessor, "feature_names_in_", categorical_cols + numeric_cols)
-df_aligned = df.copy()
-for col in expected_cols:
-    if col not in df_aligned.columns:
-        df_aligned[col] = 0 if col in numeric_cols else ""
-df_aligned = df_aligned[expected_cols]
+    df_aligned = df.copy()
+    for col in expected_cols:
+        if col not in df_aligned.columns:
+            df_aligned[col] = 0 if col in numeric_cols else ""
+    df_aligned = df_aligned[expected_cols]
 
-# Now safely transform
-cluster_indices = df_aligned.index[
-    kmeans_model.predict(preprocessor.transform(df_aligned)) == cluster_label
+    cluster_indices = df_aligned.index[
+        kmeans_model.predict(preprocessor.transform(df_aligned)) == cluster_label
+    ]
     cluster_data = df.loc[cluster_indices, 'CarbonEmission']
 
     avg_emission = cluster_data.mean()
@@ -126,6 +125,7 @@ cluster_indices = df_aligned.index[
     )
 
     st.altair_chart(chart, use_container_width=True)
+
 
 
 
