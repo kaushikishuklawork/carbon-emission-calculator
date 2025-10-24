@@ -108,21 +108,15 @@ if st.button("Predict Carbon Emission & Cluster"):
         else:
             st.error(advice)
 
-    # -------------------------------
-    # Visualization: user vs cluster average with highlight
-    # -------------------------------
-    user_color = 'green' if prediction <= avg_emission else 'orange'
-
+    # Visualization: user vs cluster average
     vis_df = pd.DataFrame({
         'Type': ['Cluster Average', 'Your Prediction'],
-        'CarbonEmission': [avg_emission, prediction],
-        'Color': ['steelblue', user_color]
+        'CarbonEmission': [avg_emission, prediction]
     })
 
-    chart = alt.Chart(vis_df).mark_bar().encode(
+    chart = alt.Chart(vis_df).mark_bar(color='steelblue').encode(
         x='Type',
-        y='CarbonEmission',
-        color='Color'
+        y='CarbonEmission'
     ).properties(
         title=f"Your Carbon Emission vs {cluster_name} Average"
     )
