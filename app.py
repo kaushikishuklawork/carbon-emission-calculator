@@ -2,24 +2,31 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model package (regressor + kmeans + preprocessor + summary)
+# -------------------------------
+# Load models and preprocessor
+# -------------------------------
 models = joblib.load("carbon_model.pkl")
-reg_model = models['regression']
-kmeans_model = models['clustering']
-preprocessor = models['preprocessor']
-cluster_summary = models['cluster_summary']
+reg_model = models['regression']        # RandomForest or any regressor
+kmeans_model = models['clustering']    # KMeans
+preprocessor = models['preprocessor']  # ColumnTransformer or full preprocessing
+cluster_summary = models.get('cluster_summary', {})
 
-# Load CSV for dropdown data
+# -------------------------------
+# Load dataset for dropdowns
+# -------------------------------
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
 
-# Feature columns
+# Detect categorical and numeric columns
 categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
 numeric_cols = [col for col in df.columns if col not in categorical_cols + ['CarbonEmission']]
 
+# -------------------------------
+# Streamlit UI
+# -------------------------------
 st.title("🌍 Carbon Emission Calculator & Lifestyle Cluster")
 st.write("Estimate your carbon footprint and discover your sustainability lifestyle category! ♻️")
 
-# User Inputs
+# Collect user inputs
 user_inputs = {}
 
 st.subheader("📌 Categorical Inputs")
@@ -34,29 +41,42 @@ for col in numeric_cols:
     mean_val = float(df[col].mean())
     user_inputs[col] = st.number_input(f"{col}", min_value=min_val, max_value=max_val, value=mean_val)
 
+# -------------------------------
+# Prediction
+# -------------------------------
 if st.button("Calculate ✅"):
-    # Convert user input to DataFrame
+    # Convert input to DataFrame
     input_df = pd.DataFrame([user_inputs])
 
-    # Ensure all expected columns exist and reorder
-    expected_cols = categorical_cols + numeric_cols
+    # -------------------------------
+    # Handle missing columns and reorder
+    # -------------------------------
+    # Get exact columns expected by the preprocessor
+    try:
+        expected_cols = preprocessor.feature_names_in_
+    except AttributeError:
+        # fallback: use categorical + numeric columns
+        expected_cols = categorical_cols + numeric_cols
+
+    # Fill missing columns with safe defaults
     for col in expected_cols:
         if col not in input_df.columns:
-            # Fill missing categorical with "", numeric with 0
             input_df[col] = 0 if col in numeric_cols else ""
+
+    # Reorder columns
     input_df = input_df[expected_cols]
 
-    # Preprocess for both regression and clustering
+    # -------------------------------
+    # Transform inputs and predict
+    # -------------------------------
     X_processed = preprocessor.transform(input_df)
 
-    # Predict carbon footprint
+    # Predict carbon emission
     carbon_pred = reg_model.predict(X_processed)[0]
     carbon_pred = round(carbon_pred, 2)
 
-    # Cluster prediction
+    # Predict cluster
     cluster = kmeans_model.predict(X_processed)[0]
-
-    # Friendly cluster labels
     cluster_labels = {
         0: "Low Impact 🌱",
         1: "Medium Impact 🌍",
@@ -64,12 +84,14 @@ if st.button("Calculate ✅"):
     }
     cluster_name = cluster_labels.get(cluster, "Unknown")
 
+    # -------------------------------
     # Display results
+    # -------------------------------
     st.subheader("📊 Your Sustainability Insights")
     st.write(f"**💨 Carbon Emission:** `{carbon_pred} kg CO₂/year`")
     st.write(f"**🏷 Lifestyle Category:** {cluster_name}")
 
-    # Guidance messages based on cluster
+    # Guidance messages
     if cluster == 0:
         st.success("Amazing! You live a very eco-friendly life 🌱💚")
     elif cluster == 1:
