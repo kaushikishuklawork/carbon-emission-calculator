@@ -27,11 +27,14 @@ st.title("Carbon Footprint Predictor with Clustering & Visualization")
 
 # User inputs
 user_input = {}
+
+# Categorical Inputs (Dropdowns restricted to training values)
 st.subheader("Categorical Inputs")
 for col in categorical_cols:
-    options = df[col].unique().tolist()
+    options = df[col].dropna().unique().tolist()  # Only values seen in training
     user_input[col] = st.selectbox(f"{col}", options)
 
+# Numeric Inputs
 st.subheader("Numeric Inputs")
 for col in numeric_cols:
     min_val = float(df[col].min())
@@ -46,23 +49,21 @@ input_df = pd.DataFrame([user_input])
 # Prediction button
 # -------------------------------
 if st.button("Predict Carbon Emission & Cluster"):
-    # -------------------------------
-    # Make input robust: fill missing columns and reorder
-    # -------------------------------
-    try:
-        expected_cols = preprocessor.feature_names_in_
-    except AttributeError:
-        expected_cols = categorical_cols + numeric_cols
-
+    # Ensure input_df has all columns expected by preprocessor
+    expected_cols = getattr(preprocessor, "feature_names_in_", categorical_cols + numeric_cols)
     for col in expected_cols:
         if col not in input_df.columns:
             input_df[col] = 0 if col in numeric_cols else ""
-    input_df = input_df[expected_cols]  # reorder columns
+    input_df = input_df[expected_cols]  # Reorder columns
 
     # -------------------------------
     # Predict carbon emission
     # -------------------------------
-    prediction = reg_model.predict(input_df)[0]
+    try:
+        prediction = reg_model.predict(input_df)[0]
+    except ValueError as e:
+        st.error(f"Prediction failed: {e}")
+        st.stop()
 
     # -------------------------------
     # Predict cluster
