@@ -13,16 +13,17 @@ except Exception as e:
     st.stop()
 
 # Extract regression pipeline and clustering info
-reg_model = data['regression']           # Pipeline with preprocessing + RandomForest
-cluster_summary = data['cluster_summary']  # Dict with cluster averages
+reg_model = data['regression']           # pipeline with preprocessing + RandomForest
+cluster_summary = data['cluster_summary']  # dict with cluster averages
+
+# Extract exact categorical and numerical columns from pipeline
+preprocessor = reg_model.named_steps['preprocess']  # ColumnTransformer
+categorical_cols = preprocessor.transformers_[0][2]  # list of categorical columns
+numerical_cols = preprocessor.transformers_[1][2]    # list of numerical columns
 
 # --- LOAD DATASET ---
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
-
-# --- FEATURE TYPES ---
 target_col = 'CarbonEmission'
-categorical_cols = [col for col in df.columns if df[col].dtype == 'object' and col != target_col]
-numerical_cols = [col for col in df.columns if df[col].dtype != 'object' and col != target_col]
 
 # --- DYNAMIC THRESHOLDS ---
 low_thresh = df[target_col].quantile(0.33)
@@ -46,18 +47,24 @@ user_input = {}
 
 # Categorical → dropdowns
 for col in categorical_cols:
-    options = sorted(df[col].dropna().unique())
+    if col in df.columns:
+        options = sorted(df[col].dropna().unique())
+    else:
+        options = ['Unknown']  # fallback if column not in CSV
     user_input[col] = st.selectbox(col, options)
 
 # Numerical → number_input
 for col in numerical_cols:
-    min_val = float(df[col].min())
-    max_val = float(df[col].max())
-    mean_val = float(df[col].mean())
+    if col in df.columns:
+        min_val = float(df[col].min())
+        max_val = float(df[col].max())
+        mean_val = float(df[col].mean())
+    else:
+        min_val, max_val, mean_val = 0.0, 100.0, 50.0  # fallback defaults
     user_input[col] = st.number_input(col, min_value=min_val, max_value=max_val, value=mean_val)
 
 input_df = pd.DataFrame([user_input])
-input_df = input_df[categorical_cols + numerical_cols]  # reorder to match training
+input_df = input_df[categorical_cols + numerical_cols]  # reorder exactly as pipeline expects
 
 # --- PREDICTION ---
 try:
