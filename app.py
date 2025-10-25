@@ -101,4 +101,3 @@ text = alt.Chart(cluster_avg).mark_text(dy=-5, color='black').encode(
     text=alt.Text('User Emission:Q', format=".2f")
 )
 st.altair_chart(chart + text, use_container_width=True)
-
