@@ -13,17 +13,16 @@ if not os.path.exists(MODEL_PATH):
     st.stop()
 else:
     try:
-        model_data = joblib.load(MODEL_PATH)
-        # Check if it is a dict with 'model' key
-        if isinstance(model_data, dict):
-            reg_model = model_data['model']
-            encoder = model_data.get('encoder', None)
+        data = joblib.load(MODEL_PATH)
+        if isinstance(data, dict):
+            reg_model = data['model']             # actual model or pipeline
+            encoder = data.get('encoder', None)   # optional encoder
         else:
-            reg_model = model_data
+            reg_model = data
             encoder = None
         st.success("Model loaded successfully ✅")
     except EOFError:
-        st.error("Model file is corrupted (EOFError). Please re-save the pipeline/model.")
+        st.error("Model file is corrupted (EOFError). Please re-save it.")
         st.stop()
     except Exception as e:
         st.error(f"Unexpected error while loading model: {e}")
@@ -71,10 +70,15 @@ for col in numerical_cols:
     user_input[col] = st.number_input(col, min_value=min_val, max_value=max_val, value=mean_val)
 
 input_df = pd.DataFrame([user_input])
+input_df = input_df[categorical_cols + numerical_cols]  # reorder to match training
 
 # --- PREPROCESS IF ENCODER EXISTS ---
 if encoder:
-    input_encoded = encoder.transform(input_df)
+    try:
+        input_encoded = encoder.transform(input_df)
+    except Exception as e:
+        st.error(f"Encoder transform failed: {e}")
+        st.stop()
 else:
     input_encoded = input_df
 
