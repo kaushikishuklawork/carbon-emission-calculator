@@ -9,23 +9,23 @@ MODEL_PATH = "carbon_model.pkl"
 
 # --- SAFE MODEL LOADING ---
 if not os.path.exists(MODEL_PATH):
-    st.error(f"Model file not found at {MODEL_PATH}. Please upload the correct file.")
+    st.error(f"Model file not found at {MODEL_PATH}. Please upload the correct pipeline file.")
     st.stop()
 else:
     try:
         reg_model = joblib.load(MODEL_PATH)
         st.success("Model loaded successfully ✅")
     except EOFError:
-        st.error("Model file is corrupted or incomplete (EOFError). Please re-save and upload the model.")
+        st.error("Model file is corrupted (EOFError). Please re-save the pipeline.")
         st.stop()
     except Exception as e:
-        st.error(f"An unexpected error occurred while loading the model: {e}")
+        st.error(f"Unexpected error while loading model: {e}")
         st.stop()
 
 # --- LOAD DATASET ---
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
 
-# --- DETECT NUMERICAL AND CATEGORICAL COLUMNS ---
+# --- FEATURE TYPES ---
 target_col = 'CarbonEmission'
 categorical_cols = [col for col in df.columns if df[col].dtype == 'object' and col != target_col]
 numerical_cols = [col for col in df.columns if df[col].dtype != 'object' and col != target_col]
@@ -51,12 +51,12 @@ st.title("Carbon Footprint Impact Calculator 🌍")
 # --- USER INPUTS ---
 user_input = {}
 
-# Categorical inputs → dropdowns
+# Categorical → dropdowns
 for col in categorical_cols:
     options = sorted(df[col].dropna().unique())
     user_input[col] = st.selectbox(col, options)
 
-# Numerical inputs → number_input
+# Numerical → number_input
 for col in numerical_cols:
     min_val = float(df[col].min())
     max_val = float(df[col].max())
@@ -65,14 +65,17 @@ for col in numerical_cols:
 
 # Convert to DataFrame
 input_df = pd.DataFrame([user_input])
-input_df = pd.DataFrame([user_input])
-input_df = input_df[categorical_cols + numerical_cols]  # reorder to match training
+input_df = input_df[categorical_cols + numerical_cols]  # reorder
 
-# --- PREDICTION ---
-carbon_pred = reg_model.predict(input_df)[0]
-st.write(f"Predicted Carbon Emission: {carbon_pred:.2f} kg CO2")
+# --- PREDICTION (pipeline handles preprocessing) ---
+try:
+    carbon_pred = reg_model.predict(input_df)[0]
+    st.write(f"Predicted Carbon Emission: {carbon_pred:.2f} kg CO2")
+except Exception as e:
+    st.error(f"Prediction failed: {e}")
+    st.stop()
 
-# Impact category
+# Determine impact
 if carbon_pred < low_thresh:
     impact = "B1 (Low Impact)"
 elif carbon_pred < med_thresh:
@@ -82,27 +85,20 @@ else:
 
 st.success(f"Your Impact Category: {impact}")
 
-# --- COMPARISON WITH CLUSTER AVERAGES ---
+# --- COMPARISON BAR CHART ---
 cluster_avg['User Emission'] = carbon_pred
 cluster_avg['Color'] = cluster_avg['Impact'].apply(lambda x: 'green' if x in impact else 'lightgray')
 
 st.subheader("Your Emission vs Cluster Averages")
-
-# Bar chart
 chart = alt.Chart(cluster_avg).mark_bar().encode(
     x=alt.X('Impact:N', title='Cluster'),
     y=alt.Y(f'{target_col}:Q', title='Emission (kg CO2)'),
     color=alt.Color('Color:N', scale=None)
 )
-
-# Add user emission value on top
-text = alt.Chart(cluster_avg).mark_text(
-    dy=-5,
-    color='black'
-).encode(
+text = alt.Chart(cluster_avg).mark_text(dy=-5, color='black').encode(
     x='Impact:N',
     y=alt.Y(f'{target_col}:Q'),
     text=alt.Text('User Emission:Q', format=".2f")
 )
-
 st.altair_chart(chart + text, use_container_width=True)
+
