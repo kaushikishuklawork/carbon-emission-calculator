@@ -7,10 +7,14 @@ import altair as alt
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
 reg_model = joblib.load("carbon_model.pkl")  # pipeline: preprocessing + model
 
-# --- DEFINE REQUIRED COLUMNS MANUALLY ---
-required_cols = [
+# --- DEFINE FEATURE TYPES ---
+categorical_cols = [
     'Body Type', 'Sex', 'Diet', 'How Often Shower',
     'Heating Energy Source', 'Transport', 'Vehicle Type'
+]
+
+numerical_cols = [
+    'Age', 'Weight', 'Height'  # example numerical features, replace with yours
 ]
 
 # --- DYNAMIC THRESHOLDS ---
@@ -31,15 +35,26 @@ cluster_avg = df.groupby('Impact')['CarbonEmission'].mean().reset_index()
 # --- STREAMLIT APP ---
 st.title("Carbon Footprint Impact Calculator 🌍")
 
-# --- USER INPUTS (DROPDOWNS ONLY) ---
+# --- USER INPUTS ---
 user_input = {}
-for col in required_cols:
+
+# Categorical inputs → dropdowns
+for col in categorical_cols:
     options = sorted(df[col].dropna().unique())
     user_input[col] = st.selectbox(col, options)
 
+# Numerical inputs → number_input
+for col in numerical_cols:
+    min_val = float(df[col].min())
+    max_val = float(df[col].max())
+    mean_val = float(df[col].mean())
+    user_input[col] = st.number_input(col, min_value=min_val, max_value=max_val, value=mean_val)
+
 # Convert to DataFrame
 input_df = pd.DataFrame([user_input])
-input_df = input_df[required_cols]  # reorder to match training
+
+# Reorder columns: categorical + numerical
+input_df = input_df[categorical_cols + numerical_cols]
 
 # --- PREDICTION ---
 carbon_pred = reg_model.predict(input_df)[0]
@@ -68,7 +83,7 @@ chart = alt.Chart(cluster_avg).mark_bar().encode(
     color=alt.Color('Color:N', scale=None)
 )
 
-# Add user emission value on top of bars
+# Add user emission value on top
 text = alt.Chart(cluster_avg).mark_text(
     dy=-5,
     color='black'
