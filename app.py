@@ -83,26 +83,3 @@ else:
     impact = "B3 (High Impact)"
 
 st.success(f"Your Impact Category: {impact}")
-
-# --- CLUSTER COMPARISON ---
-cluster_data = pd.DataFrame([
-    {'Cluster': f"Cluster {k}", 'Average Emission': v['Average Carbon Emission']} 
-    for k, v in cluster_summary.items()
-])
-cluster_data['User Emission'] = carbon_pred
-cluster_data['Color'] = cluster_data['Average Emission'].apply(
-    lambda x: 'green' if abs(x - carbon_pred) < 1e-6 else 'lightgray'
-)
-
-st.subheader("Your Emission vs Cluster Averages")
-chart = alt.Chart(cluster_data).mark_bar().encode(
-    x=alt.X('Cluster:N'),
-    y=alt.Y('Average Emission:Q', title='Emission (kg CO2)'),
-    color=alt.Color('Color:N', scale=None)
-)
-text = alt.Chart(cluster_data).mark_text(dy=-5, color='black').encode(
-    x='Cluster:N',
-    y='Average Emission:Q',
-    text=alt.Text('User Emission:Q', format=".2f")
-)
-st.altair_chart(chart + text, use_container_width=True)
