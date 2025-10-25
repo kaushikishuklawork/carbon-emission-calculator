@@ -2,31 +2,19 @@ import streamlit as st
 import pandas as pd
 import joblib
 import altair as alt
-import os
 
-# --- FILE AND MODEL PATH ---
+# --- LOAD MODEL ---
 MODEL_PATH = "carbon_model.pkl"
 
-# --- SAFE MODEL LOADING ---
-if not os.path.exists(MODEL_PATH):
-    st.error(f"Model file not found at {MODEL_PATH}. Please upload the correct file.")
+try:
+    data = joblib.load(MODEL_PATH)
+except Exception as e:
+    st.error(f"Failed to load model: {e}")
     st.stop()
-else:
-    try:
-        data = joblib.load(MODEL_PATH)
-        if isinstance(data, dict):
-            reg_model = data['model']             # actual model or pipeline
-            encoder = data.get('encoder', None)   # optional encoder
-        else:
-            reg_model = data
-            encoder = None
-        st.success("Model loaded successfully ✅")
-    except EOFError:
-        st.error("Model file is corrupted (EOFError). Please re-save it.")
-        st.stop()
-    except Exception as e:
-        st.error(f"Unexpected error while loading model: {e}")
-        st.stop()
+
+# Extract regression pipeline and clustering info
+reg_model = data['regression']           # Pipeline with preprocessing + RandomForest
+cluster_summary = data['cluster_summary']  # Dict with cluster averages
 
 # --- LOAD DATASET ---
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
@@ -49,7 +37,6 @@ def impact_category(value):
         return "B3"
 
 df['Impact'] = df[target_col].apply(impact_category)
-cluster_avg = df.groupby('Impact')[target_col].mean().reset_index()
 
 # --- STREAMLIT APP ---
 st.title("Carbon Footprint Impact Calculator 🌍")
@@ -72,19 +59,9 @@ for col in numerical_cols:
 input_df = pd.DataFrame([user_input])
 input_df = input_df[categorical_cols + numerical_cols]  # reorder to match training
 
-# --- PREPROCESS IF ENCODER EXISTS ---
-if encoder:
-    try:
-        input_encoded = encoder.transform(input_df)
-    except Exception as e:
-        st.error(f"Encoder transform failed: {e}")
-        st.stop()
-else:
-    input_encoded = input_df
-
 # --- PREDICTION ---
 try:
-    carbon_pred = reg_model.predict(input_encoded)[0]
+    carbon_pred = reg_model.predict(input_df)[0]
     st.write(f"Predicted Carbon Emission: {carbon_pred:.2f} kg CO2")
 except Exception as e:
     st.error(f"Prediction failed: {e}")
@@ -100,19 +77,25 @@ else:
 
 st.success(f"Your Impact Category: {impact}")
 
-# --- CLUSTER COMPARISON BAR CHART ---
-cluster_avg['User Emission'] = carbon_pred
-cluster_avg['Color'] = cluster_avg['Impact'].apply(lambda x: 'green' if x in impact else 'lightgray')
+# --- CLUSTER COMPARISON ---
+cluster_data = pd.DataFrame([
+    {'Cluster': f"Cluster {k}", 'Average Emission': v['Average Carbon Emission']} 
+    for k, v in cluster_summary.items()
+])
+cluster_data['User Emission'] = carbon_pred
+cluster_data['Color'] = cluster_data['Average Emission'].apply(
+    lambda x: 'green' if abs(x - carbon_pred) < 1e-6 else 'lightgray'
+)
 
 st.subheader("Your Emission vs Cluster Averages")
-chart = alt.Chart(cluster_avg).mark_bar().encode(
-    x=alt.X('Impact:N', title='Cluster'),
-    y=alt.Y(f'{target_col}:Q', title='Emission (kg CO2)'),
+chart = alt.Chart(cluster_data).mark_bar().encode(
+    x=alt.X('Cluster:N'),
+    y=alt.Y('Average Emission:Q', title='Emission (kg CO2)'),
     color=alt.Color('Color:N', scale=None)
 )
-text = alt.Chart(cluster_avg).mark_text(dy=-5, color='black').encode(
-    x='Impact:N',
-    y=alt.Y(f'{target_col}:Q'),
+text = alt.Chart(cluster_data).mark_text(dy=-5, color='black').encode(
+    x='Cluster:N',
+    y='Average Emission:Q',
     text=alt.Text('User Emission:Q', format=".2f")
 )
 st.altair_chart(chart + text, use_container_width=True)
