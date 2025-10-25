@@ -25,19 +25,14 @@ else:
 # --- LOAD DATASET ---
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
 
-# --- DEFINE FEATURE TYPES ---
-categorical_cols = [
-    'Body Type', 'Sex', 'Diet', 'How Often Shower',
-    'Heating Energy Source', 'Transport', 'Vehicle Type'
-]
-
-numerical_cols = [
-    'Age', 'Weight', 'Height'  # replace with your actual numerical features
-]
+# --- DETECT NUMERICAL AND CATEGORICAL COLUMNS ---
+target_col = 'CarbonEmission'
+categorical_cols = [col for col in df.columns if df[col].dtype == 'object' and col != target_col]
+numerical_cols = [col for col in df.columns if df[col].dtype != 'object' and col != target_col]
 
 # --- DYNAMIC THRESHOLDS ---
-low_thresh = df['CarbonEmission'].quantile(0.33)
-med_thresh = df['CarbonEmission'].quantile(0.66)
+low_thresh = df[target_col].quantile(0.33)
+med_thresh = df[target_col].quantile(0.66)
 
 def impact_category(value):
     if value < low_thresh:
@@ -47,8 +42,8 @@ def impact_category(value):
     else:
         return "B3"
 
-df['Impact'] = df['CarbonEmission'].apply(impact_category)
-cluster_avg = df.groupby('Impact')['CarbonEmission'].mean().reset_index()
+df['Impact'] = df[target_col].apply(impact_category)
+cluster_avg = df.groupby('Impact')[target_col].mean().reset_index()
 
 # --- STREAMLIT APP ---
 st.title("Carbon Footprint Impact Calculator 🌍")
@@ -70,13 +65,14 @@ for col in numerical_cols:
 
 # Convert to DataFrame
 input_df = pd.DataFrame([user_input])
+input_df = pd.DataFrame([user_input])
 input_df = input_df[categorical_cols + numerical_cols]  # reorder to match training
 
 # --- PREDICTION ---
 carbon_pred = reg_model.predict(input_df)[0]
 st.write(f"Predicted Carbon Emission: {carbon_pred:.2f} kg CO2")
 
-# Determine impact category
+# Impact category
 if carbon_pred < low_thresh:
     impact = "B1 (Low Impact)"
 elif carbon_pred < med_thresh:
@@ -95,7 +91,7 @@ st.subheader("Your Emission vs Cluster Averages")
 # Bar chart
 chart = alt.Chart(cluster_avg).mark_bar().encode(
     x=alt.X('Impact:N', title='Cluster'),
-    y=alt.Y('Average Emission (kg CO2):Q', title='Emission (kg CO2)'),
+    y=alt.Y(f'{target_col}:Q', title='Emission (kg CO2)'),
     color=alt.Color('Color:N', scale=None)
 )
 
@@ -105,7 +101,7 @@ text = alt.Chart(cluster_avg).mark_text(
     color='black'
 ).encode(
     x='Impact:N',
-    y='Average Emission (kg CO2):Q',
+    y=alt.Y(f'{target_col}:Q'),
     text=alt.Text('User Emission:Q', format=".2f")
 )
 
