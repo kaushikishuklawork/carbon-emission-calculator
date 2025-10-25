@@ -9,14 +9,21 @@ MODEL_PATH = "carbon_model.pkl"
 
 # --- SAFE MODEL LOADING ---
 if not os.path.exists(MODEL_PATH):
-    st.error(f"Model file not found at {MODEL_PATH}. Please upload the correct pipeline file.")
+    st.error(f"Model file not found at {MODEL_PATH}. Please upload the correct file.")
     st.stop()
 else:
     try:
-        reg_model = joblib.load(MODEL_PATH)
+        model_data = joblib.load(MODEL_PATH)
+        # Check if it is a dict with 'model' key
+        if isinstance(model_data, dict):
+            reg_model = model_data['model']
+            encoder = model_data.get('encoder', None)
+        else:
+            reg_model = model_data
+            encoder = None
         st.success("Model loaded successfully ✅")
     except EOFError:
-        st.error("Model file is corrupted (EOFError). Please re-save the pipeline.")
+        st.error("Model file is corrupted (EOFError). Please re-save the pipeline/model.")
         st.stop()
     except Exception as e:
         st.error(f"Unexpected error while loading model: {e}")
@@ -63,19 +70,23 @@ for col in numerical_cols:
     mean_val = float(df[col].mean())
     user_input[col] = st.number_input(col, min_value=min_val, max_value=max_val, value=mean_val)
 
-# Convert to DataFrame
 input_df = pd.DataFrame([user_input])
-input_df = input_df[categorical_cols + numerical_cols]  # reorder
 
-# --- PREDICTION (pipeline handles preprocessing) ---
+# --- PREPROCESS IF ENCODER EXISTS ---
+if encoder:
+    input_encoded = encoder.transform(input_df)
+else:
+    input_encoded = input_df
+
+# --- PREDICTION ---
 try:
-    carbon_pred = reg_model.predict(input_df)[0]
+    carbon_pred = reg_model.predict(input_encoded)[0]
     st.write(f"Predicted Carbon Emission: {carbon_pred:.2f} kg CO2")
 except Exception as e:
     st.error(f"Prediction failed: {e}")
     st.stop()
 
-# Determine impact
+# --- IMPACT CATEGORY ---
 if carbon_pred < low_thresh:
     impact = "B1 (Low Impact)"
 elif carbon_pred < med_thresh:
@@ -85,7 +96,7 @@ else:
 
 st.success(f"Your Impact Category: {impact}")
 
-# --- COMPARISON BAR CHART ---
+# --- CLUSTER COMPARISON BAR CHART ---
 cluster_avg['User Emission'] = carbon_pred
 cluster_avg['Color'] = cluster_avg['Impact'].apply(lambda x: 'green' if x in impact else 'lightgray')
 
