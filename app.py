@@ -2,10 +2,28 @@ import streamlit as st
 import pandas as pd
 import joblib
 import altair as alt
+import os
 
-# --- LOAD DATA AND MODEL ---
+# --- FILE AND MODEL PATH ---
+MODEL_PATH = "carbon_model.pkl"
+
+# --- SAFE MODEL LOADING ---
+if not os.path.exists(MODEL_PATH):
+    st.error(f"Model file not found at {MODEL_PATH}. Please upload the correct file.")
+    st.stop()
+else:
+    try:
+        reg_model = joblib.load(MODEL_PATH)
+        st.success("Model loaded successfully ✅")
+    except EOFError:
+        st.error("Model file is corrupted or incomplete (EOFError). Please re-save and upload the model.")
+        st.stop()
+    except Exception as e:
+        st.error(f"An unexpected error occurred while loading the model: {e}")
+        st.stop()
+
+# --- LOAD DATASET ---
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
-reg_model = joblib.load("carbon_model.pkl")  # pipeline: preprocessing + model
 
 # --- DEFINE FEATURE TYPES ---
 categorical_cols = [
@@ -14,7 +32,7 @@ categorical_cols = [
 ]
 
 numerical_cols = [
-    'Age', 'Weight', 'Height'  # example numerical features, replace with yours
+    'Age', 'Weight', 'Height'  # replace with your actual numerical features
 ]
 
 # --- DYNAMIC THRESHOLDS ---
@@ -52,15 +70,13 @@ for col in numerical_cols:
 
 # Convert to DataFrame
 input_df = pd.DataFrame([user_input])
-
-# Reorder columns: categorical + numerical
-input_df = input_df[categorical_cols + numerical_cols]
+input_df = input_df[categorical_cols + numerical_cols]  # reorder to match training
 
 # --- PREDICTION ---
 carbon_pred = reg_model.predict(input_df)[0]
 st.write(f"Predicted Carbon Emission: {carbon_pred:.2f} kg CO2")
 
-# Impact category
+# Determine impact category
 if carbon_pred < low_thresh:
     impact = "B1 (Low Impact)"
 elif carbon_pred < med_thresh:
@@ -94,5 +110,3 @@ text = alt.Chart(cluster_avg).mark_text(
 )
 
 st.altair_chart(chart + text, use_container_width=True)
-
-
