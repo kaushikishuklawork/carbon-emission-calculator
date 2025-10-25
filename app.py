@@ -7,6 +7,12 @@ import altair as alt
 df = pd.read_csv("Carbon emission - Sheet1f.csv")
 reg_model = joblib.load("carbon_model.pkl")  # pipeline: preprocessing + model
 
+# --- DEFINE REQUIRED COLUMNS MANUALLY ---
+required_cols = [
+    'Body Type', 'Sex', 'Diet', 'How Often Shower',
+    'Heating Energy Source', 'Transport', 'Vehicle Type'
+]
+
 # --- DYNAMIC THRESHOLDS ---
 low_thresh = df['CarbonEmission'].quantile(0.33)
 med_thresh = df['CarbonEmission'].quantile(0.66)
@@ -25,17 +31,15 @@ cluster_avg = df.groupby('Impact')['CarbonEmission'].mean().reset_index()
 # --- STREAMLIT APP ---
 st.title("Carbon Footprint Impact Calculator 🌍")
 
-# Create dropdowns for user input (only options you allow)
+# --- USER INPUTS (DROPDOWNS ONLY) ---
 user_input = {}
-for col in reg_model.feature_names_in_:
-    # Only allow values present in dataset for this column
+for col in required_cols:
     options = sorted(df[col].dropna().unique())
     user_input[col] = st.selectbox(col, options)
 
+# Convert to DataFrame
 input_df = pd.DataFrame([user_input])
-
-# Ensure columns match pipeline
-input_df = input_df[reg_model.feature_names_in_]
+input_df = input_df[required_cols]  # reorder to match training
 
 # --- PREDICTION ---
 carbon_pred = reg_model.predict(input_df)[0]
@@ -51,18 +55,20 @@ else:
 
 st.success(f"Your Impact Category: {impact}")
 
-# --- COMPARISON BAR CHART ---
+# --- COMPARISON WITH CLUSTER AVERAGES ---
 cluster_avg['User Emission'] = carbon_pred
 cluster_avg['Color'] = cluster_avg['Impact'].apply(lambda x: 'green' if x in impact else 'lightgray')
 
 st.subheader("Your Emission vs Cluster Averages")
 
+# Bar chart
 chart = alt.Chart(cluster_avg).mark_bar().encode(
     x=alt.X('Impact:N', title='Cluster'),
     y=alt.Y('Average Emission (kg CO2):Q', title='Emission (kg CO2)'),
     color=alt.Color('Color:N', scale=None)
 )
 
+# Add user emission value on top of bars
 text = alt.Chart(cluster_avg).mark_text(
     dy=-5,
     color='black'
@@ -73,6 +79,5 @@ text = alt.Chart(cluster_avg).mark_text(
 )
 
 st.altair_chart(chart + text, use_container_width=True)
-
 
 
